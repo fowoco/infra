@@ -1,0 +1,40 @@
+# client는 정적 SPA(nginx). API 베이스 URL은 빌드 타임에 상대경로(/api/v1)로 굳혀서
+# 배포 환경(IP/도메인)이 바뀌어도 이미지를 다시 안 만들어도 되게 함 (client/Dockerfile ARG 참고).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: fowoco
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+        - name: client
+          image: ghcr.io/fowoco/client:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: fowoco
+spec:
+  selector:
+    app: client
+  ports:
+    - port: 80
+      targetPort: 80
