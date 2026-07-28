@@ -1,0 +1,26 @@
+# host는 nip.io 무료 와일드카드 DNS 사용 (실제 배포 시 EC2 퍼블릭 IP로 교체).
+# 예: fowoco.3.35.21.43.nip.io — 도메인 구매 전까지 이걸로 데모 가능.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fowoco
+  namespace: fowoco
+spec:
+  rules:
+    - host: fowoco.3.35.21.43.nip.io
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: server
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
