@@ -1,5 +1,9 @@
 # client는 정적 SPA(nginx). API 베이스 URL은 빌드 타임에 상대경로(/api/v1)로 굳혀서
 # 배포 환경(IP/도메인)이 바뀌어도 이미지를 다시 안 만들어도 되게 함 (client/Dockerfile ARG 참고).
+#
+# imagePullSecrets을 안 쓰므로 ghcr.io/fowoco/client 패키지는 반드시 Public이어야 함.
+# private로 되돌아가면 ImagePullBackOff로 조용히 rollout이 멈춘다 (2026-08-05 실제로 겪음,
+# Wiki의 History 참고).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
