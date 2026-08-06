@@ -15,6 +15,7 @@ spec:
       labels:
         app: ai
     spec:
+      enableServiceLinks: false
       containers:
         - name: ai
           image: ghcr.io/fowoco/ai:latest

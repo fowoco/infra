@@ -1,5 +1,9 @@
 # server-env Secret은 git에 커밋하지 않는다 — `kubectl create secret`으로 직접 생성.
 # 필요한 키는 이 저장소 README의 "server 필수 환경변수" 표 참고 (server의 application.yaml 기준으로 정리됨).
+#
+# enableServiceLinks: false 필수 — Service 이름이 "server"라서 k8s가 자동 주입하는
+# SERVER_PORT(예: tcp://10.43.x.x:8080)가 Spring Boot의 server.port 프로퍼티랑
+# 이름이 충돌해서 부팅 자체가 실패한다 (2026-08-06 실제로 겪음). 다른 서비스도 예방 차원에서 동일하게 끔.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,6 +19,7 @@ spec:
       labels:
         app: server
     spec:
+      enableServiceLinks: false
       containers:
         - name: server
           image: ghcr.io/fowoco/server:latest
