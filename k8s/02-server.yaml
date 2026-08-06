@@ -28,6 +28,13 @@ spec:
                 name: server-env
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: 300m
+              memory: 512Mi
+            limits:
+              cpu: 800m
+              memory: 1024Mi
           readinessProbe:
             httpGet:
               path: /actuator/health
