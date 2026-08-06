@@ -19,6 +19,7 @@ spec:
       labels:
         app: client
     spec:
+      enableServiceLinks: false
       containers:
         - name: client
           image: ghcr.io/fowoco/client:latest
