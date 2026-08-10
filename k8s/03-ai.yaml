@@ -1,5 +1,6 @@
-# ai는 필수 환경변수가 없다 (전부 기본값 존재, app/core/config.py 기준).
-# 외부에 노출하지 않고 클러스터 내부에서만 server가 호출한다 (ClusterIP, Ingress 경로 없음).
+# Intent 모델·CLOVA OCR·Server↔AI Internal Bearer를 실제로 켜면서 ai-env Secret이 필요해짐.
+# ai-env는 git에 커밋하지 않는다 — `kubectl create secret`으로 직접 생성.
+# 필요한 키는 ai 저장소 .env.example 참고 (FOWOCO_ 접두사, app/core/config.py 기준).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +20,9 @@ spec:
       containers:
         - name: ai
           image: ghcr.io/fowoco/ai:latest
+          envFrom:
+            - secretRef:
+                name: ai-env
           ports:
             - containerPort: 8000
           resources:
