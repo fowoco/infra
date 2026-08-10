@@ -132,6 +132,12 @@ spec:
               command: ["pg_isready", "-U", "fowoco"]
             initialDelaySeconds: 5
             periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "fowoco"]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 6
       volumes:
         - name: bootstrap
           configMap:
