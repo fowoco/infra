@@ -1,3 +1,90 @@
+# dev PostgreSQL 모드가 직접 호출하는 bootstrap 함수 7개의 EXECUTE 권한만 자동 부여한다.
+# PostgreSQL의 docker-entrypoint-initdb.d 스크립트는 빈 PGDATA에서만 실행된다.
+# 따라서 기존 Wiki 절차에 따라 fowoco_runtime role을 Flyway보다 먼저 생성해야 한다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-bootstrap-function-grants
+  namespace: fowoco
+data:
+  10-fowoco-bootstrap-function-grants.sql: |
+    CREATE SCHEMA fowoco_infra;
+    REVOKE ALL ON SCHEMA fowoco_infra FROM PUBLIC;
+
+    CREATE FUNCTION fowoco_infra.grant_runtime_bootstrap_function_execute()
+    RETURNS event_trigger
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    SET search_path = pg_catalog
+    AS $function$
+    BEGIN
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_company_id_by_normalized_email(text)'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_company_id_by_normalized_email(TEXT) '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_company_id_by_refresh_token_hash(text)'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_company_id_by_refresh_token_hash(TEXT) '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_company_id_by_password_reset_token_hash(text)'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_company_id_by_password_reset_token_hash(TEXT) '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_company_id_by_worker_link_token_hash(text)'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_company_id_by_worker_link_token_hash(TEXT) '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_claim_event_publications(text,bigint,integer,integer)'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_claim_event_publications(TEXT, BIGINT, INTEGER, INTEGER) '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_count_outstanding_event_publications()'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_count_outstanding_event_publications() '
+          'TO fowoco_runtime';
+      END IF;
+
+      IF pg_catalog.to_regprocedure(
+        'public.bootstrap_oldest_outstanding_event_occurred_at()'
+      ) IS NOT NULL THEN
+        EXECUTE 'GRANT EXECUTE ON FUNCTION '
+          'public.bootstrap_oldest_outstanding_event_occurred_at() '
+          'TO fowoco_runtime';
+      END IF;
+    END
+    $function$;
+
+    REVOKE ALL ON FUNCTION
+      fowoco_infra.grant_runtime_bootstrap_function_execute()
+      FROM PUBLIC;
+
+    CREATE EVENT TRIGGER fowoco_runtime_bootstrap_function_execute
+      ON ddl_command_end
+      WHEN TAG IN ('CREATE FUNCTION')
+      EXECUTE FUNCTION fowoco_infra.grant_runtime_bootstrap_function_execute();
+---
 # Postgres는 클러스터 안에 컨테이너로 직접 운영한다 (심사 데모 규모라 매니지드 DB 불필요).
 # POSTGRES_PASSWORD는 실제 값으로 별도 관리 — 이 파일은 예시이며 진짜 배포 시 postgres-secret은
 # `kubectl create secret` 명령으로 직접 생성하고 이 파일에서는 제외할 것 (git에 평문 커밋 금지).
@@ -36,11 +123,19 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+            - name: bootstrap
+              mountPath: /docker-entrypoint-initdb.d/10-fowoco-bootstrap-function-grants.sql
+              subPath: 10-fowoco-bootstrap-function-grants.sql
+              readOnly: true
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "fowoco"]
             initialDelaySeconds: 5
             periodSeconds: 5
+      volumes:
+        - name: bootstrap
+          configMap:
+            name: postgres-bootstrap-function-grants
   volumeClaimTemplates:
     - metadata:
         name: data
