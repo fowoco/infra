@@ -1,0 +1,74 @@
+# 모니터링 대시보드용 상태 체크. kubectl 접근 없이 순수 HTTP 헬스체크만 한다
+# (KUBE_CONFIG를 이 저장소에 새로 등록하는 건 별도 논의 후 결정).
+#
+# 결과는 main이 아니라 status-data 브랜치에 커밋한다 — 10분마다 도는 워크플로우가
+# main 커밋 이력을 채우면 안 되니까. status-data는 순수 생성 데이터 브랜치라
+# PR 없이 이 워크플로우만 직접 push한다.
+name: status-check
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check client
+        id: client
+        run: |
+          result=$(curl -s -o /dev/null -w '{"http_status":%{http_code},"latency_ms":%{time_total}}' \
+            https://fowoco.3.35.105.80.nip.io/ || echo '{"http_status":0,"latency_ms":0}')
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+
+      - name: Check server actuator health
+        id: server
+        run: |
+          started=$(date +%s%3N)
+          body=$(curl -s -w '\n%{http_code}' "https://fowoco.3.35.105.80.nip.io/actuator/health?show-details=always" || echo -e "{}\n0")
+          ended=$(date +%s%3N)
+          code=$(echo "$body" | tail -n1)
+          json=$(echo "$body" | sed '$d')
+          if ! echo "$json" | jq -e . >/dev/null 2>&1; then json='{}'; fi
+          echo "http_status=$code" >> "$GITHUB_OUTPUT"
+          echo "latency_ms=$((ended - started))" >> "$GITHUB_OUTPUT"
+          echo "$json" > /tmp/server-health.json
+
+      - name: Assemble status.json
+        run: |
+          checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          jq -n \
+            --arg checked_at "$checked_at" \
+            --argjson client '${{ steps.client.outputs.result }}' \
+            --argjson server_http_status "${{ steps.server.outputs.http_status }}" \
+            --argjson server_latency_ms "${{ steps.server.outputs.latency_ms }}" \
+            --slurpfile server_health /tmp/server-health.json \
+            '{
+              checked_at: $checked_at,
+              client: $client,
+              server: {
+                http_status: $server_http_status,
+                latency_ms: $server_latency_ms,
+                health: $server_health[0]
+              }
+            }' > /tmp/status.json
+          cat /tmp/status.json
+
+      - name: Publish to status-data branch
+        run: |
+          git config user.name "fowoco-status-bot"
+          git config user.email "actions@github.com"
+          git fetch origin status-data 2>/dev/null && git checkout status-data || git checkout --orphan status-data
+          git rm -rf . >/dev/null 2>&1 || true
+          cp /tmp/status.json status.json
+          git add status.json
+          git commit -m "status: $(date -u +%Y-%m-%dT%H:%M:%SZ)" --allow-empty
+          git push origin status-data
