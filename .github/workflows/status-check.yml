@@ -1,5 +1,9 @@
-# 모니터링 대시보드용 상태 체크. kubectl 접근 없이 순수 HTTP 헬스체크만 한다
-# (KUBE_CONFIG를 이 저장소에 새로 등록하는 건 별도 논의 후 결정).
+# 모니터링 대시보드용 상태 체크. HTTP 헬스체크 + 실제 파드 상태(kubectl).
+#
+# KUBE_CONFIG는 클러스터 관리자 kubeconfig가 아니라, fowoco 네임스페이스 파드
+# get/list만 되는 별도 ServiceAccount(status-reader)의 스코프 kubeconfig다 —
+# secrets 조회·삭제 등은 전부 Forbidden으로 막혀있는 걸 직접 확인하고 등록함.
+# (Deployment의 KUBE_CONFIG와 이름은 같지만 이 저장소 전용의 별개 시크릿·자격증명.)
 #
 # 결과는 main이 아니라 status-data 브랜치에 커밋한다 — 10분마다 도는 워크플로우가
 # main 커밋 이력을 채우면 안 되니까. status-data는 순수 생성 데이터 브랜치라
@@ -42,6 +46,20 @@ jobs:
           echo "latency_ms=$((ended - started))" >> "$GITHUB_OUTPUT"
           echo "$json" > /tmp/server-health.json
 
+      - name: Fetch pod status
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          kubectl -n fowoco get pods -o json > /tmp/pods-raw.json || echo '{"items":[]}' > /tmp/pods-raw.json
+          jq '[.items[] | {
+                name: .metadata.name,
+                app: .metadata.labels.app,
+                ready: ([.status.containerStatuses[]?.ready] | all),
+                restarts: ([.status.containerStatuses[]?.restartCount] | add // 0),
+                phase: .status.phase,
+                age_started: .status.startTime
+              }]' /tmp/pods-raw.json > /tmp/pods.json
+
       - name: Assemble status.json
         run: |
           checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -51,6 +69,7 @@ jobs:
             --argjson server_http_status "${{ steps.server.outputs.http_status }}" \
             --argjson server_latency_ms "${{ steps.server.outputs.latency_ms }}" \
             --slurpfile server_health /tmp/server-health.json \
+            --slurpfile pods /tmp/pods.json \
             '{
               checked_at: $checked_at,
               client: $client,
@@ -58,7 +77,8 @@ jobs:
                 http_status: $server_http_status,
                 latency_ms: $server_latency_ms,
                 health: $server_health[0]
-              }
+              },
+              pods: $pods[0]
             }' > /tmp/status.json
           cat /tmp/status.json
 
