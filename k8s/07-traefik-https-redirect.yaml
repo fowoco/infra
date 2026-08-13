@@ -1,0 +1,22 @@
+# k3s 내장 Traefik은 이 저장소가 아니라 k3s addon(HelmChart, kube-system)으로 관리된다.
+# HelmChartConfig는 k3s가 공식 지원하는 오버레이 방식 — 원본 HelmChart를 건드리지 않고
+# values를 merge한다 (https://docs.k3s.io/helm#customizing-packaged-components-with-helmchartconfig).
+#
+# web(80) 진입점으로 오는 모든 요청을 websecure(443)로 301 리다이렉트한다.
+# infra#20에서 HTTPS(cert-manager)를 붙인 뒤, REFRESH_TOKEN_COOKIE_SECURE=true와
+# CORS https 전용화를 안전하게 켜기 위한 선행 조건 (http로 들어온 요청에도 secure
+# 쿠키/https-only CORS를 기대하면 깨지기 때문).
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ports:
+      web:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            permanent: true
