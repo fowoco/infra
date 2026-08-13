@@ -1,0 +1,20 @@
+# cert-manager 자체(CRD·컨트롤러)는 이 저장소가 아니라 helm으로 별도 설치한다:
+#   helm repo add jetstack https://charts.jetstack.io
+#   helm install cert-manager jetstack/cert-manager --namespace cert-manager \
+#     --create-namespace --set crds.enabled=true --version v1.16.2
+# 여기서는 발급에 쓰는 ClusterIssuer만 관리한다. HTTP-01 challenge는 Traefik(k3s 기본 ingress)이
+# 80번 포트로 받아서 처리 — nip.io는 그냥 공개 DNS라 소유권 검증(도메인 구매) 없이도 통과한다.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: akkn920@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
