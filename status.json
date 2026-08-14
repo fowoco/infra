@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-08-14T15:37:24Z",
+  "checked_at": "2026-08-14T16:30:00Z",
   "client": {
     "http_status": 200,
-    "latency_ms": 0.583464
+    "latency_ms": 0.810666
   },
   "server": {
     "http_status": 200,
-    "latency_ms": 1820,
+    "latency_ms": 1907,
     "health": {
       "components": {
         "db": {
@@ -19,7 +19,7 @@
         "diskSpace": {
           "details": {
             "total": 103865303040,
-            "free": 16625360896,
+            "free": 37590908928,
             "threshold": 10485760,
             "path": "/app/.",
             "exists": true
