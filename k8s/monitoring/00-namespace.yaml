@@ -1,0 +1,8 @@
+# fowoco 네임스페이스와 분리 — 모니터링 스택이 앱 배포(각 repo의 self-heal deploy.yml)와
+# 완전히 독립적으로 뜨고 내려가게 하려는 목적. client/server/ai의 deploy.yml은
+# infra/k8s/*.yaml 중 이름을 명시한 파일만 apply하므로(글롭이 아님) 이 디렉터리는
+# 자동배포에 절대 섞이지 않는다 — 수동으로 kubectl apply.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring

@@ -63,6 +63,19 @@ push to main → GitHub Actions
   → rollout status 확인
 ```
 
+## 모니터링
+
+- `monitoring` 네임스페이스 — `fowoco`와 완전히 분리, self-heal 배포 파이프라인과 무관(수동 `kubectl apply`).
+- Prometheus가 `node-exporter`(EC2 노드 리소스) · `kube-state-metrics`(파드/Deployment 상태) · `server`의 기존 `/actuator/prometheus` · `kube-apiserver`를 스크레이핑.
+- Grafana: `https://grafana.3.35.105.80.nip.io` (letsencrypt-prod ClusterIssuer 재사용).
+- `grafana-admin` Secret은 git에 커밋하지 않는다. 배포 전 직접 생성:
+  ```
+  kubectl create secret generic grafana-admin -n monitoring \
+    --from-literal=GF_SECURITY_ADMIN_USER=admin \
+    --from-literal=GF_SECURITY_ADMIN_PASSWORD='<strong-random-password>'
+  ```
+- 배포 순서: `kubectl apply -f infra/k8s/monitoring/` (00~06 번호 순서대로 적용됨).
+
 ## 백업 / 복구
 
 - EBS 100GB(`vol-001d68981ae503c1b`) 매일 18:00 KST DLM 스냅샷, 7일 보관.
