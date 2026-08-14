@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-08-14T05:09:41Z",
+  "checked_at": "2026-08-14T06:42:24Z",
   "client": {
     "http_status": 200,
-    "latency_ms": 0.810316
+    "latency_ms": 0.595228
   },
   "server": {
     "http_status": 200,
-    "latency_ms": 1702,
+    "latency_ms": 1931,
     "health": {
       "components": {
         "db": {
@@ -19,7 +19,7 @@
         "diskSpace": {
           "details": {
             "total": 103865303040,
-            "free": 62025588736,
+            "free": 18272374784,
             "threshold": 10485760,
             "path": "/app/.",
             "exists": true
@@ -59,20 +59,20 @@
   },
   "pods": [
     {
-      "name": "ai-6fc5b6d6dc-5bqg8",
+      "name": "ai-54f95f84f-4fcwk",
       "app": "ai",
       "ready": true,
       "restarts": 0,
       "phase": "Running",
-      "age_started": "2026-08-13T14:34:47Z"
+      "age_started": "2026-08-14T06:01:54Z"
     },
     {
-      "name": "client-58fb67b496-dcgxm",
+      "name": "client-5677dfdc57-wqz4q",
       "app": "client",
       "ready": true,
       "restarts": 0,
       "phase": "Running",
-      "age_started": "2026-08-14T00:39:48Z"
+      "age_started": "2026-08-14T06:08:19Z"
     },
     {
       "name": "postgres-0",
@@ -83,12 +83,12 @@
       "age_started": "2026-08-13T07:30:46Z"
     },
     {
-      "name": "server-7fb6ddbc89-h2xpz",
+      "name": "server-76b46b58d-xrt62",
       "app": "server",
       "ready": true,
       "restarts": 0,
       "phase": "Running",
-      "age_started": "2026-08-14T00:49:36Z"
+      "age_started": "2026-08-14T06:18:19Z"
     }
   ]
 }
