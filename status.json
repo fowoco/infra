@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-08-15T22:21:04Z",
+  "checked_at": "2026-08-15T22:47:38Z",
   "client": {
     "http_status": 200,
-    "latency_ms": 0.552501
+    "latency_ms": 1.022160
   },
   "server": {
     "http_status": 200,
-    "latency_ms": 2145,
+    "latency_ms": 2116,
     "health": {
       "components": {
         "db": {
@@ -19,7 +19,7 @@
         "diskSpace": {
           "details": {
             "total": 103865303040,
-            "free": 37054992384,
+            "free": 36861009920,
             "threshold": 10485760,
             "path": "/app/.",
             "exists": true
@@ -83,12 +83,12 @@
       "age_started": "2026-08-13T07:30:46Z"
     },
     {
-      "name": "server-7b9c7b59d6-4gstc",
+      "name": "server-55d5cfff4c-jj7d7",
       "app": "server",
       "ready": true,
       "restarts": 0,
       "phase": "Running",
-      "age_started": "2026-08-15T00:58:47Z"
+      "age_started": "2026-08-15T22:41:25Z"
     }
   ]
 }
