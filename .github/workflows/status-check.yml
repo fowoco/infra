@@ -29,15 +29,23 @@ jobs:
       - name: Check client
         id: client
         run: |
-          result=$(curl -s -o /dev/null -w '{"http_status":%{http_code},"latency_ms":%{time_total}}' \
-            https://fowoco.3.35.105.80.nip.io/ || echo '{"http_status":0,"latency_ms":0}')
+          if result=$(curl -s -o /dev/null -w '{"http_status":%{http_code},"latency_ms":%{time_total}}' \
+            https://fowoco.3.35.105.80.nip.io/); then
+            :
+          else
+            result='{"http_status":0,"latency_ms":0}'
+          fi
           echo "result=$result" >> "$GITHUB_OUTPUT"
 
       - name: Check server actuator health
         id: server
         run: |
           started=$(date +%s%3N)
-          body=$(curl -s -w '\n%{http_code}' "https://fowoco.3.35.105.80.nip.io/actuator/health?show-details=always" || echo -e "{}\n0")
+          if body=$(curl -s -w '\n%{http_code}' "https://fowoco.3.35.105.80.nip.io/actuator/health?show-details=always"); then
+            :
+          else
+            body=$'{}\n0'
+          fi
           ended=$(date +%s%3N)
           code=$(echo "$body" | tail -n1)
           json=$(echo "$body" | sed '$d')
