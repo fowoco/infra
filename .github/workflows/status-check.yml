@@ -21,6 +21,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +30,7 @@ jobs:
       - name: Check client
         id: client
         run: |
-          if result=$(curl -s -o /dev/null -w '{"http_status":%{http_code},"latency_ms":%{time_total}}' \
+          if result=$(curl -s --max-time 10 -o /dev/null -w '{"http_status":%{http_code},"latency_ms":%{time_total}}' \
             https://fowoco.3.35.105.80.nip.io/); then
             :
           else
@@ -41,7 +42,7 @@ jobs:
         id: server
         run: |
           started=$(date +%s%3N)
-          if body=$(curl -s -w '\n%{http_code}' "https://fowoco.3.35.105.80.nip.io/actuator/health?show-details=always"); then
+          if body=$(curl -s --max-time 10 -w '\n%{http_code}' "https://fowoco.3.35.105.80.nip.io/actuator/health?show-details=always"); then
             :
           else
             body=$'{}\n0'
@@ -58,7 +59,7 @@ jobs:
         run: |
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
-          kubectl -n fowoco get pods -o json > /tmp/pods-raw.json || echo '{"items":[]}' > /tmp/pods-raw.json
+          kubectl -n fowoco get pods -o json --request-timeout=15s > /tmp/pods-raw.json || echo '{"items":[]}' > /tmp/pods-raw.json
           jq '[.items[] | {
                 name: .metadata.name,
                 app: .metadata.labels.app,
