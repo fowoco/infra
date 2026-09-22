@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-09-22T11:05:41Z",
+  "checked_at": "2026-09-22T15:31:13Z",
   "client": {
     "http_status": 0,
     "latency_ms": 0
   },
   "server": {
     "http_status": 0,
-    "latency_ms": 300,
+    "latency_ms": 483,
     "health": {}
   },
   "pods": []
